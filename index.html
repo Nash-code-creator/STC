@@ -14,12 +14,13 @@
       height: 100vh;
       margin: 0;
       background-color: #e0f7fa;
+      color: #00796b;
       position: relative;
       overflow: hidden;
+      transition: background-color 0.3s, color 0.3s;
     }
     
     h1 {
-      color: #00796b;
       font-size: 36px;
     }
 
@@ -35,16 +36,16 @@
 
     .header-text {
       font-size: 24px;
-      color: #00796b;
     }
 
-    .save-button {
+    .save-button, .settings-button {
       background-color: #00796b;
       color: white;
       padding: 10px 20px;
       border: none;
       border-radius: 5px;
       cursor: pointer;
+      margin-left: 10px;
     }
 
     .button {
@@ -106,12 +107,40 @@
       0% { top: -50px; opacity: 1; }
       100% { top: 100vh; opacity: 0; }
     }
+
+    /* Settings panel */
+    .settings-panel {
+      position: fixed;
+      top: 50px;
+      right: 20px;
+      background-color: #ffffff;
+      border: 2px solid #00796b;
+      padding: 20px;
+      border-radius: 5px;
+      display: none;
+      z-index: 2;
+    }
+
+    .settings-panel input {
+      margin-left: 10px;
+    }
+
+    .settings-panel label {
+      color: #00796b;
+    }
+
+    /* Dark mode */
+    .dark-mode {
+      background-color: #121212;
+      color: #ffffff;
+    }
   </style>
 </head>
 <body>
   <div class="header">
     <div class="header-text">Game made by Nash</div>
     <button class="save-button" onclick="saveGame()">Save</button>
+    <button class="settings-button" onclick="toggleSettings()">Settings</button>
   </div>
 
   <h1>Skibidi Toilet Clicker</h1>
@@ -130,16 +159,31 @@
   <!-- Falling toilets container -->
   <div id="falling-toilets-container"></div>
 
+  <!-- Settings panel -->
+  <div class="settings-panel" id="settingsPanel">
+    <h3>Settings</h3>
+    <label>
+      <input type="checkbox" id="fallingToiletsToggle" checked onchange="toggleFallingToilets()">
+      Falling Toilets
+    </label><br>
+    <label>
+      <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()">
+      Dark Mode
+    </label>
+  </div>
+
   <script>
     let points = 0;
     let pointsPerClick = 1;
     let upgradeCost = 10;
+    let fallingToiletsEnabled = true;
 
-    // Load game progress from local storage on page load
+    // Load game progress and settings from local storage on page load
     window.onload = function() {
       loadGame();
+      loadSettings();
       updatePointsDisplay();
-      generateFallingToilets();
+      if (fallingToiletsEnabled) generateFallingToilets();
     }
 
     function clickButton() {
@@ -163,15 +207,15 @@
     }
 
     function saveGame() {
-      // Save points, pointsPerClick, and upgradeCost to local storage
       localStorage.setItem("points", points);
       localStorage.setItem("pointsPerClick", pointsPerClick);
       localStorage.setItem("upgradeCost", upgradeCost);
+      localStorage.setItem("fallingToiletsEnabled", fallingToiletsEnabled);
+      localStorage.setItem("darkMode", document.body.classList.contains("dark-mode"));
       alert("Game saved!");
     }
 
     function loadGame() {
-      // Load saved values from local storage if they exist
       if (localStorage.getItem("points")) {
         points = parseInt(localStorage.getItem("points"));
         pointsPerClick = parseInt(localStorage.getItem("pointsPerClick"));
@@ -179,22 +223,50 @@
       }
     }
 
+    function loadSettings() {
+      fallingToiletsEnabled = localStorage.getItem("fallingToiletsEnabled") !== "false";
+      document.getElementById("fallingToiletsToggle").checked = fallingToiletsEnabled;
+
+      const darkModeEnabled = localStorage.getItem("darkMode") === "true";
+      document.getElementById("darkModeToggle").checked = darkModeEnabled;
+      if (darkModeEnabled) toggleDarkMode();
+    }
+
+    function toggleSettings() {
+      const settingsPanel = document.getElementById("settingsPanel");
+      settingsPanel.style.display = settingsPanel.style.display === "none" ? "block" : "none";
+    }
+
+    function toggleFallingToilets() {
+      fallingToiletsEnabled = document.getElementById("fallingToiletsToggle").checked;
+      if (fallingToiletsEnabled) {
+        generateFallingToilets();
+      } else {
+        document.getElementById("falling-toilets-container").innerHTML = "";
+      }
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark-mode");
+    }
+
     // Generate falling toilet icons
     function generateFallingToilets() {
       const container = document.getElementById("falling-toilets-container");
       setInterval(() => {
-        const toilet = document.createElement("div");
-        toilet.classList.add("falling-toilet");
-        toilet.innerText = "🚽";
-        toilet.style.left = Math.random() * 100 + "vw"; // Random horizontal position
-        toilet.style.animationDuration = (Math.random() * 3 + 2) + "s"; // Random fall duration
-        container.appendChild(toilet);
+        if (fallingToiletsEnabled) {
+          const toilet = document.createElement("div");
+          toilet.classList.add("falling-toilet");
+          toilet.innerText = "🚽";
+          toilet.style.left = Math.random() * 100 + "vw";
+          toilet.style.animationDuration = (Math.random() * 3 + 2) + "s";
+          container.appendChild(toilet);
 
-        // Remove toilet icon once it falls out of view
-        toilet.addEventListener("animationend", () => {
-          toilet.remove();
-        });
-      }, 500); // Add a new toilet every 500 ms
+          toilet.addEventListener("animationend", () => {
+            toilet.remove();
+          });
+        }
+      }, 500);
     }
   </script>
 </body>
